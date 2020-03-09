@@ -1,11 +1,15 @@
 import asyncio
+import os
 
 import aiohttp
-import requests
 from bs4 import BeautifulSoup
+from flask import make_response
 
 
-ASYNC = True
+class MergeableDict(dict):
+    def __or__(self, o):
+        self.update(o)
+        return self
 
 
 def parse_contribuition_count(html_page):
@@ -18,62 +22,55 @@ def parse_contribuition_count(html_page):
     )
 
 
-def get_contributions_page_sync(github_username):
-    url = f"https://github.com/users/{github_username}/contributions"
-    response = requests.get(url)
-    return response.content
-
-
-def get_contribution_count_sync(github_username):
-    html_page = get_contributions_page_sync(github_username)
-    return parse_contribuition_count(html_page)
-
-
-def main_sync(github_usernames):
-    contributions = {
-        github_username: {"contributions": get_contribution_count_sync(github_username)}
-        for github_username in github_usernames
-    }
-    ranking = sorted(
-        contributions.items(), key=lambda x: x[1]["contributions"], reverse=True
-    )
-    for i, c in enumerate(ranking):
-        print(f"{i+1}. ({c[1]['contributions']}) {c[0]}")
-
-
-async def get_contributions_page_async(session, github_username):
+async def async_get_contributions_page(session, github_username):
     url = f"https://github.com/users/{github_username}/contributions"
     async with session.get(url) as response:
-        return await response.text()
+        html_page = await response.text()
+        return parse_contribuition_count(html_page)
 
 
-async def main_async(github_usernames):
+async def async_get_avatar(session, github_username):
+    url = f"https://github.com/{github_username}.png"
+    async with session.get(url) as response:
+        await response.read()
+        return str(response.url)
+
+
+async def get_profile_data(session, github_username):
+    contributions = await async_get_contributions_page(session, github_username)
+    avatar = await async_get_avatar(session, github_username)
+    return MergeableDict({
+        "username": github_username,
+        "contributions": contributions,
+        "avatar": avatar + "&s=80",
+    })
+
+
+async def rank_profiles(github_usernames):
     tasks = []
     async with aiohttp.ClientSession() as session:
         for username in github_usernames:
-            tasks.append(get_contributions_page_async(session, username))
-        profile_pages = await asyncio.gather(*tasks)
+            tasks.append(get_profile_data(session, username))
+        profiles = await asyncio.gather(*tasks)
 
-        contributions = [
-            parse_contribuition_count(html_page) for html_page in profile_pages
-        ]
-        contributions = dict(zip(github_usernames, contributions))
-        ranking = sorted(contributions.items(), key=lambda x: x[1], reverse=True)
-        for i, c in enumerate(ranking):
-            print(f"{i + 1}. ({c[1]}) {c[0]}")
+    sorted_rank = sorted(profiles, key=lambda x: x["contributions"], reverse=True)
+    # sorted_rank = map(lambda x: MergeableDict(x), sorted_rank)
+    return [v | {"position": i+1} for i, v in enumerate(sorted_rank)]
 
 
-if __name__ == "__main__":
+def scrape():
     try:
         f = open("usernames.txt", "r")
         github_usernames = [line.strip() for line in f.readlines()]
         f.close()
     except FileNotFoundError:
-        print("File 'usernames.txt' not found.")
-        exit(-1)
+        github_usernames = os.environ.get("github_usernames")
+        if not github_usernames:
+            return make_response({"details": "usernames not found"})
+        else:
+            github_usernames = github_usernames.split(",")
 
-    if ASYNC:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(main_async(github_usernames))
-    else:
-        main_sync(github_usernames)
+    loop = asyncio.get_event_loop()
+    ranking = loop.run_until_complete(rank_profiles(github_usernames))
+
+    return {"results": ranking}
