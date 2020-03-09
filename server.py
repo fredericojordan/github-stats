@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, make_response, render_template
 from stats import scrape
 
 
@@ -11,8 +11,21 @@ app.config["SECRET_KEY"] = os.environ.get(
 
 
 @app.route("/")
-def scrape_and_deliver():
-    return scrape()
+def serve_template():
+    json_data = scrape()
+
+    template_context = {
+        "results": json_data["results"],
+        "len": len(json_data["results"]),
+    }
+
+    template = render_template("rank.html", **template_context)
+    return make_response(template)
+
+
+@app.route("/json")
+def serve_json():
+    return make_response(scrape())
 
 
 if __name__ == "__main__":

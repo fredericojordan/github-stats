@@ -6,6 +6,12 @@ from bs4 import BeautifulSoup
 from flask import make_response
 
 
+class MergeableDict(dict):
+    def __or__(self, o):
+        self.update(o)
+        return self
+
+
 def parse_contribuition_count(html_page):
     return int(
         BeautifulSoup(html_page, "html.parser")
@@ -33,11 +39,11 @@ async def async_get_avatar(session, github_username):
 async def get_profile_data(session, github_username):
     contributions = await async_get_contributions_page(session, github_username)
     avatar = await async_get_avatar(session, github_username)
-    return {
+    return MergeableDict({
         "username": github_username,
         "contributions": contributions,
-        "avatar": avatar,
-    }
+        "avatar": avatar + "&s=80",
+    })
 
 
 async def rank_profiles(github_usernames):
@@ -47,7 +53,9 @@ async def rank_profiles(github_usernames):
             tasks.append(get_profile_data(session, username))
         profiles = await asyncio.gather(*tasks)
 
-    return sorted(profiles, key=lambda x: x["contributions"], reverse=True)
+    sorted_rank = sorted(profiles, key=lambda x: x["contributions"], reverse=True)
+    # sorted_rank = map(lambda x: MergeableDict(x), sorted_rank)
+    return [v | {"position": i+1} for i, v in enumerate(sorted_rank)]
 
 
 def scrape():
@@ -65,4 +73,4 @@ def scrape():
     loop = asyncio.get_event_loop()
     ranking = loop.run_until_complete(rank_profiles(github_usernames))
 
-    return make_response({"results": ranking})
+    return {"results": ranking}
