@@ -2,45 +2,56 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Rank</title>
+    <title>Ranking</title>
 
     <style>
-      .list {
-        display: flex;
-        flex-direction: column;
+      body {
+        background-color: #eee;
       }
 
-      .list a {
+      .rank {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 50px;
+        left: 50%;
+        transform: translate(-50%, 0);
+        width: 600px;
+        margin-bottom: 50px;
+        background-color: #f2f2f2;
+      }
+
+      .rank a {
         display: flex;
         align-items: center;
-        border-bottom: 1px solid #2222;
+        border-bottom: 1px solid #ddd;
         color: #666;
         text-decoration: none;
       }
 
-      .list a:last-child {
+      .rank a:last-child {
         border: 0;
       }
 
-      .list a:nth-child(1) {
+      .rank a:nth-child(1) {
         background-color: #ffda65;
       }
 
-      .list a:nth-child(2) {
+      .rank a:nth-child(2) {
         background-color: #babaca;
       }
 
-      .list a:nth-child(3) {
+      .rank a:nth-child(3) {
         background-color: #c99355;
       }
 
-      .list img {
+      .rank img {
         height: 80px;
         object-fit: cover;
         margin-right: 20px;
       }
 
-      .list h4 {
+      .rank h4 {
         margin-left: 20px;
       }
 
@@ -48,7 +59,7 @@
   </head>
 
   <body>
-      <div class="list">
+      <div class="rank">
         {% for i in range(0, len) %}
           <a class="item item-thumbnail-left" href="https://github.com/{{results[i].username}}" target="_blank">
             <img src="{{ results[i].avatar }}">
