@@ -50,26 +50,38 @@ def main_sync(github_usernames):
 async def get_contributions_page_async(session, github_username):
     url = f"https://github.com/users/{github_username}/contributions"
     async with session.get(url) as response:
-        return await response.text()
+        html_page = await response.text()
+        return parse_contribuition_count(html_page)
+
+
+async def get_avatar_async(session, github_username):
+    url = f"https://github.com/{github_username}.png"
+    async with session.get(url) as response:
+        await response.read()
+        return str(response.url)
+
+
+async def get_profile_data(session, github_username):
+    contributions = await get_contributions_page_async(session, github_username)
+    avatar = await get_avatar_async(session, github_username)
+    return {
+        "username": github_username,
+        "contributions": contributions,
+        "avatar": avatar,
+    }
 
 
 async def main_async(github_usernames):
     tasks = []
     async with aiohttp.ClientSession() as session:
         for username in github_usernames:
-            tasks.append(get_contributions_page_async(session, username))
-        profile_pages = await asyncio.gather(*tasks)
-
-        contributions = [
-            parse_contribuition_count(html_page) for html_page in profile_pages
-        ]
-        contributions = dict(zip(github_usernames, contributions))
-        ranking = sorted(contributions.items(), key=lambda x: x[1], reverse=True)
+            tasks.append(get_profile_data(session, username))
+        profiles = await asyncio.gather(*tasks)
 
         global global_ranking
-        global_ranking = [
-            {"username": entry[0], "contributions": entry[1]} for entry in ranking
-        ]
+        global_ranking = sorted(
+            profiles, key=lambda x: x["contributions"], reverse=True
+        )
 
 
 @app.route("/")
