@@ -54,7 +54,6 @@ async def rank_profiles(github_usernames):
         profiles = await asyncio.gather(*tasks)
 
     sorted_rank = sorted(profiles, key=lambda x: x["contributions"], reverse=True)
-    # sorted_rank = map(lambda x: MergeableDict(x), sorted_rank)
     return [v | {"position": i+1} for i, v in enumerate(sorted_rank)]
 
 
