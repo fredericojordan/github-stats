@@ -69,4 +69,4 @@ We may also use `gunicorn` to serve a simple static web page displaying the stat
 gunicorn server:app
 ```
 
-and then navigate to [localhost:8000](localhost:8000) on a browser of your choice.
+and then navigate to [localhost:8000](http://localhost:8000) on a browser of your choice.
