@@ -1,9 +1,13 @@
 import asyncio
+import logging
 import os
 
 import aiohttp
 from bs4 import BeautifulSoup
 from flask import make_response
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class MergeableDict(dict):
@@ -13,13 +17,17 @@ class MergeableDict(dict):
 
 
 def parse_contribuition_count(html_page):
-    return int(
-        BeautifulSoup(html_page, "html.parser")
-        .find("div", {"class": "js-yearly-contributions"})
-        .text.strip()
-        .split()[0]
-        .replace(",", "")
-    )
+    try:
+        return int(
+            BeautifulSoup(html_page, "html.parser")
+            .find("div", {"class": "js-yearly-contributions"})
+            .text.strip()
+            .split()[0]
+            .replace(",", "")
+        )
+    except Exception as exc:
+        logging.error(f"Parsing contribution: {exc}")
+        return -1
 
 
 async def async_get_contributions_page(session, github_username):
@@ -73,3 +81,8 @@ def scrape():
     ranking = loop.run_until_complete(rank_profiles(github_usernames))
 
     return {"results": ranking}
+
+
+if __name__ == "__main__":
+    for r in scrape()["results"]:
+        print(f"{r['position']}. ({r['contributions']}) {r['username']}")
