@@ -14,6 +14,9 @@ app.config["SECRET_KEY"] = os.environ.get(
 def serve_template():
     json_data = scrape()
 
+    if not json_data:
+        return make_response({"details": "usernames not found"})
+
     template_context = {
         "results": json_data["results"],
         "len": len(json_data["results"]),
@@ -25,9 +28,9 @@ def serve_template():
 
 @app.route("/json")
 def serve_json():
-    return make_response(scrape())
+    json_data = scrape()
 
+    if not json_data:
+        return make_response({"details": "usernames not found"})
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    return make_response(json_data)

@@ -1,4 +1,6 @@
 # github-stats
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 Python scripts to gather github statistics.
 
 ## Requirements
@@ -13,20 +15,58 @@ Run the following command on your terminal:
 pip install -r requirements.txt
 ```
 
-### The usernames file
+### Github username list
 
-We also need a `usernames.txt` text file listing github usernames we are interested in gathering statistics from.
+There are two different ways to determine what users we will be scraping:
 
-For example:
+#### Using `usernames.txt` file
+
+`usernames.txt` is a text file listing github usernames we are interested in gathering statistics from.
+
+It should have one username per line, for example:
 
 ```
 fredericojordan
+gvanrossum
 ```
 
-## Running the scripts
+#### Using `GITHUB_USERNAMES` environment variable
 
-Simply run the script from your terminal:
+If a `usernames.txt` file is not found, the second option is using a `GITHUB_USERNAMES` env var.
+
+The usernames are separated by a comma, for example (in bash):
+
+```sh
+GITHUB_USERNAMES="fredericojordan,gvanrossum"
+```
+
+or in fish:
+
+```sh
+set -x GITHUB_USERNAMES "fredericojordan,gvanrossum"
+```
+
+## Running the script
+
+Simply run the `stats.py` script from your terminal:
 
 ```sh
 python stats.py
 ```
+
+Output:
+
+```sh
+1. (2855) fredericojordan
+2. (1040) gvanrossum
+```
+
+## (Optional) Start web server
+
+We may also use `gunicorn` to serve a simple static web page displaying the statistics:
+
+```sh
+gunicorn server:app
+```
+
+and then navigate to [localhost:8000](localhost:8000) on a browser of your choice.

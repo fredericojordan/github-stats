@@ -4,8 +4,6 @@ import os
 
 import aiohttp
 from bs4 import BeautifulSoup
-from flask import make_response
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,11 +45,13 @@ async def async_get_avatar(session, github_username):
 async def get_profile_data(session, github_username):
     contributions = await async_get_contributions_page(session, github_username)
     avatar = await async_get_avatar(session, github_username)
-    return MergeableDict({
-        "username": github_username,
-        "contributions": contributions,
-        "avatar": avatar + "&s=80",
-    })
+    return MergeableDict(
+        {
+            "username": github_username,
+            "contributions": contributions,
+            "avatar": avatar + "&s=80",
+        }
+    )
 
 
 async def rank_profiles(github_usernames):
@@ -62,7 +62,7 @@ async def rank_profiles(github_usernames):
         profiles = await asyncio.gather(*tasks)
 
     sorted_rank = sorted(profiles, key=lambda x: x["contributions"], reverse=True)
-    return [v | {"position": i+1} for i, v in enumerate(sorted_rank)]
+    return [v | {"position": i + 1} for i, v in enumerate(sorted_rank)]
 
 
 def scrape():
@@ -71,9 +71,10 @@ def scrape():
         github_usernames = [line.strip() for line in f.readlines()]
         f.close()
     except FileNotFoundError:
-        github_usernames = os.environ.get("github_usernames")
+        github_usernames = os.environ.get("GITHUB_USERNAMES")
         if not github_usernames:
-            return make_response({"details": "usernames not found"})
+            LOGGER.error("usernames not found")
+            return
         else:
             github_usernames = github_usernames.split(",")
 
@@ -84,5 +85,7 @@ def scrape():
 
 
 if __name__ == "__main__":
-    for r in scrape()["results"]:
-        print(f"{r['position']}. ({r['contributions']}) {r['username']}")
+    response = scrape()
+    if response:
+        for r in response["results"]:
+            print(f"{r['position']}. ({r['contributions']}) {r['username']}")
