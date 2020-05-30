@@ -3,9 +3,13 @@ import logging
 import os
 
 import aiohttp
-from bs4 import BeautifulSoup
 
 LOGGER = logging.getLogger(__name__)
+
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+if not GITHUB_TOKEN:
+    LOGGER.error("Please set GITHUB_TOKEN environment variable")
+    exit(-1)
 
 
 class MergeableDict(dict):
@@ -14,44 +18,36 @@ class MergeableDict(dict):
         return self
 
 
-def parse_contribuition_count(html_page):
-    try:
-        return int(
-            BeautifulSoup(html_page, "html.parser")
-            .find("div", {"class": "js-yearly-contributions"})
-            .text.strip()
-            .split()[0]
-            .replace(",", "")
-        )
-    except Exception as exc:
-        logging.error(f"Parsing contribution: {exc}")
-        return -1
-
-
-async def async_get_contributions_page(session, github_username):
-    url = f"https://github.com/users/{github_username}/contributions"
-    async with session.get(url) as response:
-        html_page = await response.text()
-        return parse_contribuition_count(html_page)
-
-
-async def async_get_avatar(session, github_username):
-    url = f"https://github.com/{github_username}.png"
-    async with session.get(url) as response:
-        await response.read()
-        return str(response.url)
+async def async_api_info(session, github_username):
+    url = "https://api.github.com/graphql"
+    query_body = 'query {{ user(login: "{username}") {{ name avatarUrl(size:80) contributionsCollection {{ contributionCalendar {{ totalContributions }} }} }} }}'.format(
+        username=github_username
+    )
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    async with session.post(
+        url, json={"query": query_body}, headers=headers
+    ) as response:
+        return await response.json()
 
 
 async def get_profile_data(session, github_username):
-    contributions = await async_get_contributions_page(session, github_username)
-    avatar = await async_get_avatar(session, github_username)
-    return MergeableDict(
-        {
-            "username": github_username,
-            "contributions": contributions,
-            "avatar": avatar + "&s=80",
-        }
-    )
+    profile_data = await async_api_info(session, github_username)
+
+    try:
+        return MergeableDict(
+            {
+                "username": github_username,
+                "contributions": profile_data["data"]["user"]["contributionsCollection"][
+                    "contributionCalendar"
+                ]["totalContributions"],
+                "avatar": profile_data["data"]["user"]["avatarUrl"],
+            }
+        )
+    except Exception:
+        return MergeableDict({"username": github_username, "contributions": -1})
 
 
 async def rank_profiles(github_usernames):
