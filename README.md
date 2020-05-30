@@ -15,6 +15,23 @@ Run the following command on your terminal:
 pip install -r requirements.txt
 ```
 
+### Github API Token
+
+In order authenticate the API requests, we must first [generate a Github personal token](https://github.com/settings/tokens),
+containing the `read:user` scope.
+
+Then we just set the `GITHUB_TOKEN` environment variable:
+
+```sh
+GITHUB_TOKEN=<token>
+```
+
+or in fish:
+
+```sh
+set -x GITHUB_TOKEN "<token>"
+```
+
 ### Github username list
 
 There are two different ways to determine what users we will be scraping:
