@@ -20,6 +20,7 @@ def serve_template():
     template_context = {
         "results": json_data["results"],
         "len": len(json_data["results"]),
+        "total_commits": json_data["total_commits"]
     }
 
     template = render_template("rank.html", **template_context)

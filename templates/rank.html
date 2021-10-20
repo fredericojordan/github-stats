@@ -13,12 +13,32 @@
         display: flex;
         flex-direction: column;
         position: absolute;
-        top: 50px;
+        top: 150px;
         left: 50%;
         transform: translate(-50%, 0);
         width: 600px;
         margin-bottom: 50px;
         background-color: #f2f2f2;
+      }
+
+      .total {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 50px;
+        left: 50%;
+        transform: translate(-50%, 0);
+        width: 600px;
+        margin-bottom: 50px;
+        background-color: #eee;
+      }
+
+      .total a {
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #ddd;
+        color: #666;
+        text-decoration: none;
       }
 
       .rank a {
@@ -59,14 +79,27 @@
   </head>
 
   <body>
-      <div class="rank">
-        {% for i in range(0, len) %}
-          <a class="item item-thumbnail-left" href="https://github.com/{{results[i].username}}" target="_blank">
-            <img src="{{ results[i].avatar }}">
-            <h2>{{ results[i].position }}. {{ results[i].username }}</h2>
-            <h4>{{ results[i].contributions }} contributions in the last year</h4>
-          </a>
-        {% endfor %}
-      </div>
+    <table>
+      <tr>
+        <td>
+          <div class="rank">
+            {% for i in range(0, len) %}
+              <a class="item item-thumbnail-left" href="https://github.com/{{results[i].username}}" target="_blank">
+                <img src="{{ results[i].avatar }}">
+                <h2>{{ results[i].position }}. {{ results[i].username }}</h2>
+                <h4>{{ results[i].contributions }} contributions in the last year</h4>
+              </a>
+            {% endfor %}
+          </div>
+        </td>
+        <td>
+          <div class="total">
+            <a class="item item-thumbnail-left" href="https://github.com/IBM" target="_blank">
+              <h2> Total contributions from IBMers on GitHub: {{ total_commits }}</h2>
+            </a>
+          </div>
+        </td>
+    </tr>
+    </table>
   </body>
 </html>

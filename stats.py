@@ -77,7 +77,11 @@ def scrape():
     loop = asyncio.get_event_loop()
     ranking = loop.run_until_complete(rank_profiles(github_usernames))
 
-    return {"results": ranking}
+    total_commits = 0
+    for user in ranking:
+        total_commits = total_commits + int(user['contributions'])
+
+    return {"results": ranking, "total_commits": total_commits}
 
 
 if __name__ == "__main__":
